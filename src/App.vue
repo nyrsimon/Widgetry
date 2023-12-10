@@ -67,7 +67,7 @@ const selectedIndex = ref(0);
 const appPages = [
   {
     title: 'Home',
-    url: '/home',
+    url: '/',
     iosIcon: mailOutline,
     mdIcon: mailSharp,
   },
@@ -108,6 +108,9 @@ const path = window.location.pathname.split('folder/')[1];
 if (path !== undefined) {
   selectedIndex.value = appPages.findIndex((page) => page.title.toLowerCase() === path.toLowerCase());
 }
+
+//OK not sure if this should be here but I want to check if we are logged into Widgetry
+//Check the
 </script>
 
 <style scoped>
