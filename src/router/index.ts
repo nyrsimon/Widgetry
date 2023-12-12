@@ -12,6 +12,11 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/folder/Inbox'
   },
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/LoginPage.vue')
+  },
+  {
     path: '/folder/:id',
     component: () => import ('@/views/FolderPage.vue'),
   },

@@ -96,8 +96,8 @@ const appPages = [
     mdIcon: trashSharp,
   },
   {
-    title: 'Spam',
-    url: '/folder/Spam',
+    title: 'Login',
+    url: '/login',
     iosIcon: warningOutline,
     mdIcon: warningSharp,
   },
