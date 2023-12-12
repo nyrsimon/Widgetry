@@ -12,7 +12,7 @@
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">{{ $route.params.id }}</ion-title>
+          <ion-title size="large">Widgetry</ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -20,12 +20,30 @@
         <strong class="capitalize">{{ $route.params.id }}</strong>
         <p>Is this the home page? </p>
       </div>
+      <div v-if="!isUserLoggedIn">Not logged in</div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { Preferences } from '@capacitor/preferences';
+
+const url=import.meta.env.VITE_WIDGETRY_URL;
+
+const isUserLoggedIn = async () => {
+  console.log('pref');
+  const { value } = await Preferences.get({ key: 'name' });
+
+  if(value != null){
+    console.log('found');
+    return value;
+  } else {
+    console.log('not found');
+    return false;
+  }
+};
+
 </script>
 
 <style scoped>

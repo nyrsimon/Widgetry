@@ -66,7 +66,7 @@ import {
 const selectedIndex = ref(0);
 const appPages = [
   {
-    title: 'Home',
+    title: 'Dashboard',
     url: '/',
     iosIcon: mailOutline,
     mdIcon: mailSharp,
