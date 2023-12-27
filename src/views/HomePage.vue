@@ -17,10 +17,9 @@
       </ion-header>
 
       <div id="container">
-        <strong class="capitalize">{{ $route.params.id }}</strong>
         <p>Is this the home page? </p>
       </div>
-      <div v-if="!isUserLoggedIn">logged in</div>
+      <div v-if="!state.isUserLoggedIn">logged in</div>
     </ion-content>
   </ion-page>
 </template>
@@ -29,27 +28,28 @@
 import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { state } from '@/state';
 
 const router = useRouter();
-
-const isUserLoggedIn = ref(false);
 
 import { Preferences } from '@capacitor/preferences';
 
 const url = import.meta.env.VITE_WIDGETRY_URL;
 
 onMounted(async () => {
-  const t = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
+  const isUserLoggedIn = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
 
-  if (t.value !== null) {
-    isUserLoggedIn.value = (t.value === 'true');
-  }
+  const token = await Preferences.get({ key: "NOTION_TOKEN"});
 
-  console.log(isUserLoggedIn.value);
+  console.log(isUserLoggedIn);
+
   //if we are not logged in redirect to the login page
   if(!isUserLoggedIn.value){
     router.push('/login');
   }
+
+  //store token in state
+  state.token = token.value || "";
 })
 
 </script>
