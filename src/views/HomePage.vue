@@ -5,46 +5,50 @@
         <ion-buttons slot="start">
           <ion-menu-button color="primary"></ion-menu-button>
         </ion-buttons>
-        <ion-title>{{ $route.params.id }}</ion-title>
+        <ion-title style="color:black;">Widgetry</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Widgetry</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <div id="container">
-        <p>Is this the home page? </p>
-      </div>
-      <div v-if="!state.isUserLoggedIn">logged in</div>
+      <ion-card>
+        <ion-card-title>Some title here</ion-card-title>
+        <ion-card-content>
+          Contnt goes here
+        </ion-card-content>
+      </ion-card>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { state } from '@/state';
-
-const router = useRouter();
-
+import storage from '@/storage';
 import { Preferences } from '@capacitor/preferences';
+import NotionTools from '@/'
+//Our array of widgets to display
+const widgets = [];
+const router = useRouter();
+//const store = new Storage();
+
 
 const url = import.meta.env.VITE_WIDGETRY_URL;
 
 onMounted(async () => {
+
+  //const test = await storage.get('test');
+  //await storage.set("my-key", "junki")
+
   const isUserLoggedIn = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
 
-  const token = await Preferences.get({ key: "NOTION_TOKEN"});
+  const token = await Preferences.get({ key: "WIDGETRY_TOKEN" });
 
   console.log(isUserLoggedIn);
 
   //if we are not logged in redirect to the login page
-  if(!isUserLoggedIn.value){
+  if (!isUserLoggedIn.value) {
     router.push('/login');
   }
 

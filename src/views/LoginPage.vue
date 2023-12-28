@@ -106,12 +106,15 @@ const logon = async (id: any, pwd: any) => {
     "password" : pwd
   }
   axios.post('http://localhost/api/createToken', data, options)
-    .then(response => {
+    .then(async response => {
       console.log(response);
       if(response.status == 200){
-        //good response - store the token and redirect to dashboard
+        //good response - store the token, update the preferences and redirect to dashboard
+        await Preferences.set({ key: 'IS_USER_LOGGED_IN', value: "YES"});
+        await Preferences.set({ key: 'WIDGETRY_TOKEN', value: response.data.token });
+
         state.token = response.data.token;
-        storeTokenInPreferences(response.data.token);
+        //storeTokenInPreferences(response.data.token);
         //Redirect
         router.push('/')
       }
@@ -125,7 +128,7 @@ const logon = async (id: any, pwd: any) => {
 
 async function storeTokenInPreferences(token: string){
   await Preferences.set({
-    key: "NOTION_TOKEN",
+    key: "WIDGETRY_TOKEN",
     value: token
   })
 }
