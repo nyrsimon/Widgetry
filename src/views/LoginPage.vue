@@ -66,6 +66,7 @@ import axios from 'axios';
 import { Browser } from '@capacitor/browser';
 import { state } from '@/state';
 import { Preferences } from '@capacitor/preferences';
+import { WidgetryTools } from '@/helpers/WidgetryTools';
 
 const router = useRouter();
 
@@ -111,7 +112,10 @@ const logon = async (id: any, pwd: any) => {
       if(response.status == 200){
         //good response - store the token, update the preferences and redirect to dashboard
         await Preferences.set({ key: 'IS_USER_LOGGED_IN', value: "YES"});
-        await Preferences.set({ key: 'WIDGETRY_TOKEN', value: response.data.token });
+
+        await WidgetryTools.saveTokenToStorage(response.data.token);
+
+        //await Preferences.set({ key: 'WIDGETRY_TOKEN', value: response.data.token });
 
         state.token = response.data.token;
         //storeTokenInPreferences(response.data.token);

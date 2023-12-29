@@ -10,10 +10,10 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-card>
+      <ion-card v-for="widget in widgets">
         <ion-card-title>Some title here</ion-card-title>
         <ion-card-content>
-          Contnt goes here
+          Contnt goes here{{ widget.widgetID }}
         </ion-card-content>
       </ion-card>
     </ion-content>
@@ -25,11 +25,12 @@ import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, Io
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { state } from '@/state';
-import storage from '@/storage';
 import { Preferences } from '@capacitor/preferences';
-import NotionTools from '@/'
+import { WidgetryTools } from '@/helpers/WidgetryTools';
+import WidgetBuilder from '@/helpers/WidgetBuilder';
+
 //Our array of widgets to display
-const widgets = [];
+const widgets = ref();
 const router = useRouter();
 //const store = new Storage();
 
@@ -41,19 +42,12 @@ onMounted(async () => {
   //const test = await storage.get('test');
   //await storage.set("my-key", "junki")
 
-  const isUserLoggedIn = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
+  //WidgetryTools.syncWidgets();
 
-  const token = await Preferences.get({ key: "WIDGETRY_TOKEN" });
+  //Load the widgets from storage
+  let ret = await WidgetBuilder.loadAllWidgetsFromStorage();
 
-  console.log(isUserLoggedIn);
-
-  //if we are not logged in redirect to the login page
-  if (!isUserLoggedIn.value) {
-    router.push('/login');
-  }
-
-  //store token in state
-  state.token = token.value || "";
+  widgets.value = ret;
 })
 
 </script>

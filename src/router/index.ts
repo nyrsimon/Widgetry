@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import { Preferences } from '@capacitor/preferences';
 import { state } from '@/state';
+import { WidgetryTools } from '../helpers/WidgetryTools';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -41,17 +42,17 @@ router.beforeEach(async (to) => {
 
     const isUserLoggedIn = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
 
-    const token = await Preferences.get({ key: "NOTION_TOKEN" });
+    const token = await WidgetryTools.getTokenFromStorage();
 
     console.log(isUserLoggedIn);
 
     //if we are not logged in redirect to the login page
-    if (isUserLoggedIn.value !== "YES") {
+    if ( (isUserLoggedIn.value !== "YES") || (token == 'undefined') ) {
       return '/login';
     }
 
     //store token in state
-    state.token = token.value || "";
+    state.token = token || "";
 
   }
 })
