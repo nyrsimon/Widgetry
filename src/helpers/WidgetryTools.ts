@@ -28,16 +28,16 @@ export class WidgetryTools {
                 console.log(response);
                 if (response.status == 200) {
 
+                    console.log('resp');
+                    console.log(response);
                     WidgetBuilder.clearStorage();
 
                     //OK let's store all this in the Internal Storage
-                    response.data.forEach((widget: {
-                        [x: string]: any; id: any;
-                    }) => {
+                    response.data.forEach((widget: any) => {
                         //create a widget
                         let w = new WidgetBuilder(widget.id);
 
-                        w.importAPIData(widget.datapoints)
+                        w.importAPIData(widget)
 
                         //save it to Storage
                         w.saveToStorage();

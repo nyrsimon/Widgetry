@@ -9,7 +9,8 @@ export default class WidgetBuilder {
 
     widgetData = {
         widgetID: <BigInt | null> null,
-        widgetDataPoints: <any> []
+        widgetDataPoints: <any> [],
+        widgetInfo: <any> []
     };
 
     constructor(id: BigInt) {
@@ -55,11 +56,21 @@ export default class WidgetBuilder {
     }
 
     //imports the data that we get from the api
-    importAPIData(data : Array<any>){
-        //loop through the data and lod it up
-        data.forEach(element => {
+    importAPIData(data: { [x: string]: any; datapoints?: any[] | undefined; }){
+        //loop through the data and load it up
+        let dp = data.datapoints;
+
+        data.datapoints?.forEach(element => {
             this.addData(element.record_date, element.data_value, false);
+
         });
+
+        //remove the datapoints from the input
+        delete data['datapoints'];
+
+        //And the info stuff
+        this.widgetData.widgetInfo = data;
+
         return true;
     }
 
