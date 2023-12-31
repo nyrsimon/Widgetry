@@ -3,6 +3,7 @@ import { RouteRecordRaw } from 'vue-router';
 import { Preferences } from '@capacitor/preferences';
 import { state } from '@/state';
 import { WidgetryTools } from '../helpers/WidgetryTools';
+import WidgetBuilder from '../helpers/WidgetBuilder';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -53,6 +54,24 @@ router.beforeEach(async (to) => {
 
     //store token in state
     state.token = token || "";
+
+    //OK letsget the data from state - if not there do w resync
+    console.log('syncing');
+    await WidgetryTools.syncWidgets();
+    console.log('after sync');
+
+    // //Load the widgets from storage
+    // WidgetBuilder.loadAllWidgetsFromStorage()
+    //   .then(ret => {
+    //     console.log('back from loadall');
+    //     console.log(ret);
+
+
+    //     //and finally lets store the widget data in our state management
+    //     state.widgetData = ret.data;
+
+    //   });
+
 
   }
 })

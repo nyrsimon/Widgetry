@@ -2,6 +2,7 @@ import { Preferences } from '@capacitor/preferences';
 import axios from 'axios';
 //import { storage } from '@/storage';
 import WidgetBuilder from '@/helpers/WidgetBuilder';
+import { state } from '@/state';
 
 export class WidgetryTools {
 
@@ -11,6 +12,7 @@ export class WidgetryTools {
     //We expect the token to be in held in our state object
     static async syncWidgets() {
         console.log('sync');
+        state.isLoading = true;
         const token = await this.getTokenFromStorage();
         console.log('token' + token);
 
@@ -59,6 +61,9 @@ export class WidgetryTools {
                 console.log('axios error');
                 console.log(error.response.data.message);
 
+            })
+            .finally( () => {
+                state.isLoading = false;
             })
 
     }

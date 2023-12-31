@@ -5,12 +5,12 @@ import storage from '../storage';
 export default class WidgetBuilder {
 
     //Prefix used for the key inthe local storage
-    static widgetPrefix= "Widget-";
+    static widgetPrefix = "Widget-";
 
     widgetData = {
-        widgetID: <BigInt | null> null,
-        widgetDataPoints: <any> [],
-        widgetInfo: <any> []
+        widgetID: <BigInt | null>null,
+        widgetDataPoints: <any>[],
+        widgetInfo: <any>[]
     };
 
     constructor(id: BigInt) {
@@ -19,23 +19,26 @@ export default class WidgetBuilder {
     }
 
     //loads all the widgets - returns an array of widgets
-    static async loadAllWidgetsFromStorage(){
-        let widgets: any[] = [];
+    static  loadAllWidgetsFromStorage =  ()  => {
+        return new Promise(async resolve => {
+            let widgets: any[] = [];
 
-        await storage.forEach((value, key: string,  index) => {
-            if (key.startsWith(this.widgetPrefix)) {
-                widgets.push(value)
-            }
-        });
+            await storage.forEach((value, key: string, index) => {
+                if (key.startsWith(this.widgetPrefix)) {
+                    widgets.push(value)
+                }
+            });
 
-        console.log('ret');
-        console.log(widgets);
-        return widgets;
+            console.log('returned from storage');
+            console.log(widgets);
+            resolve(widgets);
+
+        })
 
     }
     //Loads the data for a specific widget ID from the Storage (SQLlite)
     //Returns true for success or false for failure
-    async loadDataFromStorage(widgetID: BigInt){
+    async loadDataFromStorage(widgetID: BigInt) {
         let key = WidgetBuilder.widgetPrefix + widgetID;
 
         //now get it from storage
@@ -44,7 +47,7 @@ export default class WidgetBuilder {
         console.log(data);
 
         //Did we get anything?
-        if(data === null){
+        if (data === null) {
             //TODO should we do something hete
             return false;
         }
@@ -56,12 +59,40 @@ export default class WidgetBuilder {
     }
 
     //imports the data that we get from the api
-    importAPIData(data: { [x: string]: any; datapoints?: any[] | undefined; }){
-        //loop through the data and load it up
-        let dp = data.datapoints;
+    //We are give the data returned from the API for ONE widget
+    importAPIData(data: { [x: string]: any; datapoints?: any[] | undefined; }) {
 
+        //now add the opacity stuff
+        //Find min/max values for opacity for each widget
+        let min = 0;
+        let max = 1;
+        data.datapoints?.forEach(dp => {
+        //for (let dp of data.datapoints) {
+            if (Number(dp.data_value) > max) {
+                max = Number(dp.data_value);
+            }
+        });
+
+
+        //Now loop through again and calc the opacity :)
+        let delta = max - min;
+
+        for (let j = 0; j < data.datapoints!.length; j++) {
+            let dp = data.datapoints![j];
+            let diff = dp.data_value - min;
+            let opacity = diff / delta;
+            opacity = Math.round(opacity * 100) / 100;
+            //now get in the range 0.2 to 1
+            opacity = opacity * .8;
+            opacity = opacity + .2;
+            opacity = Math.round(opacity * 100) / 100;
+            data.datapoints![j].opacity = opacity;
+        }
+
+
+        //loop through the datapoints and load them up into this object
         data.datapoints?.forEach(element => {
-            this.addData(element.record_date, element.data_value, false);
+            this.addData(element.record_date, element.data_value, element.opacity, false);
 
         });
 
@@ -70,17 +101,21 @@ export default class WidgetBuilder {
 
         //And the info stuff
         this.widgetData.widgetInfo = data;
+        //Ok store min/mox
+        this.widgetData.widgetInfo.min = min;
+        this.widgetData.widgetInfo.max = max;
+
 
         return true;
     }
 
     //Saves this in the App Storage
-    saveToStorage(){
-        storage.set( WidgetBuilder.widgetPrefix + this.widgetData.widgetID, this.widgetData)
+    saveToStorage() {
+        storage.set(WidgetBuilder.widgetPrefix + this.widgetData.widgetID, this.widgetData)
     }
 
     //Clears the storage of all widgets
-    static clearStorage(){
+    static clearStorage() {
         storage.forEach((value, key, index) => {
             if (key.startsWith(this.widgetPrefix)) {
                 storage.remove(key);
@@ -89,15 +124,15 @@ export default class WidgetBuilder {
 
     }
     //This adds a data point
-    addData(date: string, value: number, isDirty: boolean){
+    addData(date: string, value: number, opacity: number, isDirty: boolean) {
 
-        this.widgetData.widgetDataPoints.push({date, value, isDirty});
+        this.widgetData.widgetDataPoints.push({ date, value, opacity, isDirty });
 
         //Returnt his soe we can chain
         return this;
     }
 
-    build(){
+    build() {
         return this.widgetData
     }
 }

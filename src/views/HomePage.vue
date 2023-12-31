@@ -10,23 +10,93 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-card v-for="widget in widgets">
+      <ion-card v-for="widget in widgets" class="widget-card" :data-widgetid="widget.widgetID" :data-widgettitle="widget.widgetInfo.description">
         <ion-card-title>{{ widget.widgetInfo.description }}</ion-card-title>
-        <ion-card-content>
+        <ion-card-content @click="openModal">
           <ul class="squares" style="overflow-x: scroll;">
-            <li v-for="(item, index) in widget.widgetDataPoints" class="datapoint" :id="index"
-              :style="{ backgroundColor: widget.widgetInfo.color, opacity:  item.opacity }" >
+            <li v-for="(item, index) in widget.widgetDataPoints" class="datapoint" :data-dataid="index"
+              :style="{ backgroundColor: widget.widgetInfo.color, opacity: item.opacity }">
             </li>
           </ul>
         </ion-card-content>
       </ion-card>
+
+      <ion-modal ref="modal" :is-open="isModalOpen"  :initial-breakpoint="0.25" @willDismiss="onDidDismiss($event)" >
+        <ion-content>
+          <ion-toolbar>
+            <ion-title>{{modalTitle}}</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="setOpen(false)">Close</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+          <ion-list>
+            <ion-item>
+              <ion-avatar slot="start">
+                <ion-img src="https://i.pravatar.cc/300?u=b"></ion-img>
+              </ion-avatar>
+              <ion-label>
+                <h2>Connor Smith</h2>
+                <p>Sales Rep</p>
+              </ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-avatar slot="start">
+                <ion-img src="https://i.pravatar.cc/300?u=a"></ion-img>
+              </ion-avatar>
+              <ion-label>
+                <h2>Daniel Smith</h2>
+                <p>Product Designer</p>
+              </ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-avatar slot="start">
+                <ion-img src="https://i.pravatar.cc/300?u=d"></ion-img>
+              </ion-avatar>
+              <ion-label>
+                <h2>Greg Smith</h2>
+                <p>Director of Operations</p>
+              </ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-avatar slot="start">
+                <ion-img src="https://i.pravatar.cc/300?u=e"></ion-img>
+              </ion-avatar>
+              <ion-label>
+                <h2>Zoey Smith</h2>
+                <p>CEO</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/vue';
-import { nextTick, onMounted, ref } from 'vue';
+import {
+  IonButtons,
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonMenuButton,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  createAnimation,
+  IonImg,
+  IonAvatar,
+  IonLabel,
+  IonItem,
+  IonList,
+  IonModal
+} from '@ionic/vue';
+import { watch, onBeforeUpdate, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { state } from '@/state';
 import { Preferences } from '@capacitor/preferences';
@@ -43,58 +113,80 @@ const max = ref(1);
 
 const url = import.meta.env.VITE_WIDGETRY_URL;
 
-onMounted(async () => {
+/**
+ * MODAL STUFF
+ */
+
+const modal = ref();
+
+const isModalOpen = ref(false);
+
+const dismiss = () => modal.value.$el.dismiss();
+
+const modalTitle = ref("");
+const setOpen = (open: boolean) => (isModalOpen.value = open);
+function openModal(e: { target: { closest: (arg0: string) => { (): any; new(): any; dataset: { (): any; new(): any; widgetid: any; widgettitle: any; }; }; }; }) {
+  console.log(e);
+
+  //get the widgetID & titlefrom the parent
+  let id = e.target.closest(".widget-card").dataset.widgetid;
+  let title = e.target.closest(".widget-card").dataset.widgettitle;
+
+  modalTitle.value = title;
+
+  console.log(id + title);
+  isModalOpen.value = true;
+}
+
+function onDidDismiss(event: any){
+
+  console.log(event);
+  isModalOpen.value = false;
+
+};
+
+/**
+ * END MODAL STUFF
+ */
+
+ watch( () => state.isLoading,
+ (isLoading) => {
+    console.log('isloading changed' + isLoading)
+      WidgetBuilder.loadAllWidgetsFromStorage()
+      .then(data => {
+        console.log('back')
+
+        widgets.value = data;
+        console.log('added');
+        console.log(data);
+
+      });
+ }
+
+ )
+onBeforeUpdate(async () => {
 
   //const test = await storage.get('test');
   //await storage.set("my-key", "junki")
 
-  await WidgetryTools.syncWidgets();
+  //lets get the widgets from state
+  //TODO if no widget found then kick off sync
 
   //Load the widgets from storage
-  let ret = await WidgetBuilder.loadAllWidgetsFromStorage();
-
-  console.log('in mount');
-  console.log(ret);
-
-  //Find min/max values for opacity for each widget
-  for (let i =0; i< ret.length; i++) {
-    let widget = ret[i];
-    let min = 0;
-    let max = 1;
-    for (let dp of widget.widgetDataPoints){
-      if(Number(dp.value) > max){
-        max = Number(dp.value);
-      }
-    }
-
-    //Ok store min/mox
-    ret[i].widgetInfo.min = min;
-    ret[i].widgetInfo.max = max;
+  console.log('loading in Homepage' + state.isLoading)
+  if(state.isLoading){
+    console.log('no cos still loading');
+    return;
   }
+  WidgetBuilder.loadAllWidgetsFromStorage()
+    .then(data =>{
+      console.log('back')
 
-  //Now loop through again and calc the opacity :)
-  for (let i = 0; i < ret.length; i++) {
-    let widget = ret[i];
-    let delta = widget.widgetInfo.max - widget.widgetInfo.min;
-    let min = widget.widgetInfo.min;
+      widgets.value = data;
+      console.log('added');
+      console.log(data);
 
-    for (let j=0; j<widget.widgetDataPoints.length; j++) {
-      let dp = widget.widgetDataPoints[j];
-      let diff = dp.value - min;
-      let opacity = diff / delta;
-      opacity = Math.round(opacity * 100) / 100;
-      //now get in the range 0.2 to 1
-      opacity = opacity * .8;
-      opacity = opacity + .2;
-      opacity = Math.round(opacity * 100) / 100;
-      ret[i].widgetDataPoints[j].opacity = opacity;
-    }
-
-  }
-
-  widgets.value = ret;
-  console.log('added');
-  console.log(ret);
+    });
 })
 
 </script>
