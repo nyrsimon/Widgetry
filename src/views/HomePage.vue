@@ -10,7 +10,8 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-card v-for="widget in widgets" class="widget-card" :data-widgetid="widget.widgetID" :data-widgettitle="widget.widgetInfo.description">
+      <ion-card v-for="(widget, index) in widgets" class="widget-card" :data-widgetid="index"
+        :data-widgettitle="widget.widgetInfo.description">
         <ion-card-title>{{ widget.widgetInfo.description }}</ion-card-title>
         <ion-card-content @click="openModal">
           <ul class="squares" style="overflow-x: scroll;">
@@ -21,50 +22,30 @@
         </ion-card-content>
       </ion-card>
 
-      <ion-modal ref="modal" :is-open="isModalOpen"  :initial-breakpoint="0.25" @willDismiss="onDidDismiss($event)" >
+      <ion-modal ref="modal" :is-open="isModalOpen" :initial-breakpoint="0.25" @willDismiss="onDidDismiss($event)">
         <ion-content>
           <ion-toolbar>
-            <ion-title>{{modalTitle}}</ion-title>
+            <ion-buttons slot="start">
+              <ion-button @click="setOpen(false)">Cancel</ion-button>
+            </ion-buttons>
+            <ion-title>{{ modalTitle }}</ion-title>
             <ion-buttons slot="end">
-              <ion-button @click="setOpen(false)">Close</ion-button>
+              <ion-button @click="savePressed($event)">Save</ion-button>
             </ion-buttons>
           </ion-toolbar>
           <ion-list>
             <ion-item>
-              <ion-avatar slot="start">
-                <ion-img src="https://i.pravatar.cc/300?u=b"></ion-img>
-              </ion-avatar>
-              <ion-label>
-                <h2>Connor Smith</h2>
-                <p>Sales Rep</p>
-              </ion-label>
+              <ion-icon aria-hidden="true" :icon="calendarNumberOutline" slot="start"></ion-icon>
+              <ion-datetime-button datetime="datetime"></ion-datetime-button>
             </ion-item>
             <ion-item>
-              <ion-avatar slot="start">
-                <ion-img src="https://i.pravatar.cc/300?u=a"></ion-img>
-              </ion-avatar>
-              <ion-label>
-                <h2>Daniel Smith</h2>
-                <p>Product Designer</p>
-              </ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-avatar slot="start">
-                <ion-img src="https://i.pravatar.cc/300?u=d"></ion-img>
-              </ion-avatar>
-              <ion-label>
-                <h2>Greg Smith</h2>
-                <p>Director of Operations</p>
-              </ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-avatar slot="start">
-                <ion-img src="https://i.pravatar.cc/300?u=e"></ion-img>
-              </ion-avatar>
-              <ion-label>
-                <h2>Zoey Smith</h2>
-                <p>CEO</p>
-              </ion-label>
+              <ion-icon aria-hidden="true" :icon="createOutline" slot="start"></ion-icon>
+              <ion-input  type="number" v-model="metricValue"></ion-input>
+              <!-- <ion-datetime presentation="date" size="cover" @ionChange="dateChanged($event)"
+                :max="maxDate"></ion-datetime> -->
+              <ion-modal :keep-contents-mounted="true">
+                <ion-datetime id="datetime" size="cover" presentation="date" :value="currDate.toISOString()" :max="maxDate" :show-default-buttons="true" @ionChange="dateChanged($event)"></ion-datetime>
+              </ion-modal>
             </ion-item>
           </ion-list>
         </ion-content>
@@ -83,8 +64,11 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  IonInput,
   IonCard,
   IonCardContent,
+  IonDatetime,
+  IonDatetimeButton,
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
@@ -94,25 +78,86 @@ import {
   IonLabel,
   IonItem,
   IonList,
-  IonModal
+  IonModal,
+  IonIcon
 } from '@ionic/vue';
-import { watch, onBeforeUpdate, ref } from 'vue';
+import { watch, onBeforeUpdate, ref, reactive, ReactiveEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { state } from '@/state';
 import { Preferences } from '@capacitor/preferences';
 import { WidgetryTools } from '@/helpers/WidgetryTools';
 import WidgetBuilder from '@/helpers/WidgetBuilder';
+import { calendarNumberOutline, createOutline } from 'ionicons/icons';
+import {DataPoint, Widget} from '@/helpers/WidgetInterface';
 
-//Our array of widgets to display
-const widgets = ref();
+//const widgets = reactive(temp);
+const widgets = ref<Widget[]>([]);
 const router = useRouter();
-const min = ref(0);
-const max = ref(1);
-//const store = new Storage();
+
+const metricValue = ref(0);
+const currDate = ref(new Date());
+const maxDate = new Date().toISOString();
+const widgetBeingEdited = ref(0);
+
+/**
+ * When the date changes load the new value
+ * @param e
+ */
+function dateChanged(e: any) {
+  console.log('changed');
+  console.log(e);
+
+  //Get the new date selected and save it
+  let d = new Date(e.detail.value);
+  currDate.value = d;
+  console.log(currDate.value.toISOString());
+
+  //need to find the datapoint with the date we have selected!
+  let val = findMetricValInWidgetForDate(widgetBeingEdited.value, currDate.value);
+
+  metricValue.value = val;
+
+}
+
+/**
+ * Finds the metric for a date - if no date found returns zero
+ * @param widgetID
+ * @param dateToFind
+ */
+function findMetricValInWidgetForDate(widgetID : number, dateToFind : Date){
+
+  //Get the datapoints for this widget
+  let dps = widgets.value[widgetID];
+
+  //get the date in YYYY-MM-DD format
+  let dateStr = formatDate(dateToFind);
+
+  //returns yyyy/mm/dd - now replace / with -
+
+  let foundVal = 0;
+  //now loop through them
+  for(const dp of dps.widgetDataPoints) {
+    if(dp.record_date == dateStr ){
+      foundVal = dp.value;
+      break;
+    }
+  };
+
+  return foundVal;
+
+}
 
 
+function formatDate(date : Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const localDate = `${year}-${month}-${day}`;
+  return localDate;
+};
 const url = import.meta.env.VITE_WIDGETRY_URL;
 
+//datetime.addEventListener('ionChange', (e) => setDateTimeValue(e.detail.value));
 /**
  * MODAL STUFF
  */
@@ -124,24 +169,75 @@ const isModalOpen = ref(false);
 const dismiss = () => modal.value.$el.dismiss();
 
 const modalTitle = ref("");
+
 const setOpen = (open: boolean) => (isModalOpen.value = open);
+
+/**
+ * This handles when we open the model to enter values
+ * sets the title & metric value and stores the ID
+ * @param e
+ */
 function openModal(e: { target: { closest: (arg0: string) => { (): any; new(): any; dataset: { (): any; new(): any; widgetid: any; widgettitle: any; }; }; }; }) {
   console.log(e);
 
-  //get the widgetID & titlefrom the parent
-  let id = e.target.closest(".widget-card").dataset.widgetid;
+  //Set the title
   let title = e.target.closest(".widget-card").dataset.widgettitle;
-
   modalTitle.value = title;
 
+  //Save the widget ID
+  let id: string = e.target.closest(".widget-card").dataset.widgetid;
+  console.log('editing' + id);
+  widgetBeingEdited.value = Number(id);
+
+  //How do we set the date to today?
+  let x = widgets.value[Number(id)];
+  console.log(x);
+
+  metricValue.value = 0;
+  metricValue.value = findMetricValInWidgetForDate(widgetBeingEdited.value, currDate.value);
   console.log(id + title);
   isModalOpen.value = true;
 }
 
-function onDidDismiss(event: any){
+/**
+ * Hnadles when save is pressed on the modal...
+ * If the value has changed then let's save it to Notion
+ * @param e
+ */
+function savePressed(e: any) {
+  console.log('save pressed');
+  console.log(metricValue.value);
 
-  console.log(event);
+  //Close the modal
+  setOpen(false);
+
+  //OK if the value changed we need to store it in Notion
+  //Check the value on th einput field vs the one in the widget
+  let val = findMetricValInWidgetForDate(widgetBeingEdited.value, currDate.value);
+
+  if(val == metricValue.value){
+    //its the same so no save needed
+    return;
+
+  }
+
+  console.log('we have a change');
+
+  let dp : DataPoint = {
+    record_date : formatDate(currDate.value),
+    value : metricValue.value,
+    opacity : .6
+  }
+  //Lets call the api with the change
+  WidgetryTools.saveDatapoint(dp);
+
+}
+
+function onDidDismiss(event: any) {
+
+
   isModalOpen.value = false;
+
 
 };
 
@@ -149,23 +245,30 @@ function onDidDismiss(event: any){
  * END MODAL STUFF
  */
 
- watch( () => state.isLoading,
- (isLoading) => {
+watch(() => state.isLoading,
+  (isLoading) => {
     console.log('isloading changed' + isLoading)
-      WidgetBuilder.loadAllWidgetsFromStorage()
-      .then(data => {
-        console.log('back')
 
+    //If we are loading then return immediately
+    if (isLoading) {
+      return;
+    }
+
+    WidgetBuilder.loadAllWidgetsFromStorage()
+      .then((data : any) => {
+        console.log('back from loadall')
+        console.log(data);
         widgets.value = data;
         console.log('added');
         console.log(data);
 
       });
- }
+  }
 
- )
+)
 onBeforeUpdate(async () => {
 
+  console.log('date' + maxDate);
   //const test = await storage.get('test');
   //await storage.set("my-key", "junki")
 
@@ -174,12 +277,12 @@ onBeforeUpdate(async () => {
 
   //Load the widgets from storage
   console.log('loading in Homepage' + state.isLoading)
-  if(state.isLoading){
+  if (state.isLoading) {
     console.log('no cos still loading');
     return;
   }
   WidgetBuilder.loadAllWidgetsFromStorage()
-    .then(data =>{
+    .then((data : any)    => {
       console.log('back')
 
       widgets.value = data;

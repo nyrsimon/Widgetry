@@ -3,6 +3,7 @@ import axios from 'axios';
 //import { storage } from '@/storage';
 import WidgetBuilder from '@/helpers/WidgetBuilder';
 import { state } from '@/state';
+import { DataPoint } from '@/helpers/WidgetInterface';
 
 export class WidgetryTools {
 
@@ -27,24 +28,24 @@ export class WidgetryTools {
         }
         axios.get('http://localhost/api/widgets', options)
             .then(async response => {
+                console.log('resp');
+
                 console.log(response);
                 if (response.status == 200) {
 
-                    console.log('resp');
-                    console.log(response);
-                    WidgetBuilder.clearStorage();
+                    await WidgetBuilder.clearStorage();
 
                     //OK let's store all this in the Internal Storage
-                    response.data.forEach((widget: any) => {
+                    response.data.forEach(async (widget: any) => {
                         //create a widget
                         let w = new WidgetBuilder(widget.id);
 
                         w.importAPIData(widget)
 
                         //save it to Storage
-                        w.saveToStorage();
+                        await w.saveToStorage();
 
-                        console.log('saveing');
+                        console.log('saving');
                         console.log(w.widgetData);
                     });
                     //good response - store the token, update the preferences and redirect to dashboard
@@ -72,7 +73,7 @@ export class WidgetryTools {
 
         //Get the Widgetry Access token
         const token = await Preferences.get({ key: this.TOKEN_KEY });
-
+        console.log('get tok from storage');
         console.log(token);
         if (token === null) {
             return "";
@@ -88,4 +89,63 @@ export class WidgetryTools {
         return "";
     }
 
+    static async saveDatapoint(dp : DataPoint){
+        console.log('Save DP');
+        console.log(dp);
+        const token = await this.getTokenFromStorage();
+        console.log('token' + token);
+
+        //now lets build the headers
+        const options = {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "Access-Control-Allow-Origin": "*",
+                "Content-Type": "application/json",
+                'Authorization': 'Bearer ' + token
+            }
+        }
+        axios.post('http://localhost/api/saveDatapoint', dp, options)
+            .then(async response => {
+                console.log('Save resp');
+
+                console.log(response);
+                if (response.status == 200) {
+
+                    // await WidgetBuilder.clearStorage();
+
+                    // //OK let's store all this in the Internal Storage
+                    // response.data.forEach(async (widget: any) => {
+                    //     //create a widget
+                    //     let w = new WidgetBuilder(widget.id);
+
+                    //     w.importAPIData(widget)
+
+                    //     //save it to Storage
+                    //     await w.saveToStorage();
+
+                        console.log('Saved');
+                        // console.log(w.widgetData);
+                    //});
+                    //good response - store the token, update the preferences and redirect to dashboard
+                    //await Preferences.set({ key: 'IS_USER_LOGGED_IN', value: "YES" });
+                    //await Preferences.set({ key: 'WIDGETRY_TOKEN', value: response.data.token });
+
+                    //state.token = response.data.token;
+                    //storeTokenInPreferences(response.data.token);
+                    //Redirect
+                    //router.push('/')
+                }
+            })
+            .catch(function (error) {
+                console.log('axios error');
+                console.log(error.response.data.message);
+
+            })
+            .finally(() => {
+                console.log('finally');
+                //state.isLoading = false;
+            })
+
+
+    }
 }

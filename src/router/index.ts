@@ -40,7 +40,7 @@ router.beforeEach(async (to) => {
   // If we are credentialled then load the widgets from storage into memory (state)
   if (to.name == 'Home') {
 
-
+    console.log('in router to home');
     const isUserLoggedIn = await Preferences.get({ key: 'IS_USER_LOGGED_IN' });
 
     const token = await WidgetryTools.getTokenFromStorage();

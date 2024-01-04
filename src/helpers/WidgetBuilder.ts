@@ -1,19 +1,30 @@
 // This is the Widget Builder Class
 import { key } from 'localforage-cordovasqlitedriver';
 import storage from '../storage';
+import { Widget } from '@/helpers/WidgetInterface';
 
 export default class WidgetBuilder {
 
     //Prefix used for the key inthe local storage
     static widgetPrefix = "Widget-";
 
-    widgetData = {
-        widgetID: <BigInt | null>null,
-        widgetDataPoints: <any>[],
-        widgetInfo: <any>[]
+    widgetData : Widget = {
+        widgetID : 0,
+        widgetDataPoints : [],
+        widgetInfo : {
+            description: "",
+            color: ""
+        }
+
     };
 
-    constructor(id: BigInt) {
+    // widgetData = {
+    //     widgetID: <BigInt | null>null,
+    //     widgetDataPoints: <any>[],
+    //     widgetInfo: <any>[]
+    // };
+
+    constructor(id: Number) {
         this.widgetData.widgetID = id;
         this.widgetData.widgetDataPoints = [];
     }
@@ -21,7 +32,7 @@ export default class WidgetBuilder {
     //loads all the widgets - returns an array of widgets
     static  loadAllWidgetsFromStorage =  ()  => {
         return new Promise(async resolve => {
-            let widgets: any[] = [];
+            let widgets: Widget[] = [];
 
             await storage.forEach((value, key: string, index) => {
                 if (key.startsWith(this.widgetPrefix)) {
@@ -100,33 +111,41 @@ export default class WidgetBuilder {
         delete data['datapoints'];
 
         //And the info stuff
-        this.widgetData.widgetInfo = data;
+        this.widgetData.widgetInfo.description = data.description;
+        this.widgetData.widgetInfo.color = data.color;
         //Ok store min/mox
-        this.widgetData.widgetInfo.min = min;
-        this.widgetData.widgetInfo.max = max;
+        //this.widgetData.widgetInfo.min = min;
+        //this.widgetData.widgetInfo.max = max;
 
 
         return true;
     }
 
     //Saves this in the App Storage
-    saveToStorage() {
+    async saveToStorage() {
         storage.set(WidgetBuilder.widgetPrefix + this.widgetData.widgetID, this.widgetData)
     }
 
     //Clears the storage of all widgets
-    static clearStorage() {
-        storage.forEach((value, key, index) => {
+    static async clearStorage() {
+        console.log('starting to clear');
+        storage.forEach(async (value, key, index) => {
             if (key.startsWith(this.widgetPrefix)) {
-                storage.remove(key);
+                await storage.remove(key);
             }
         });
+        console.log ('clear done');
 
     }
     //This adds a data point
-    addData(date: string, value: number, opacity: number, isDirty: boolean) {
+    addData(datex: string, value: number, opacity: number, isDirty: boolean) {
 
-        this.widgetData.widgetDataPoints.push({ date, value, opacity, isDirty });
+        this.widgetData.widgetDataPoints.push({
+            record_date: datex,
+            value: value,
+            opacity: opacity,
+            isDirty: isDirty
+        });
 
         //Returnt his soe we can chain
         return this;
