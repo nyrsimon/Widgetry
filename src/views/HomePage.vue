@@ -90,7 +90,7 @@ import WidgetBuilder from '@/helpers/WidgetBuilder';
 import { calendarNumberOutline, createOutline } from 'ionicons/icons';
 import {DataPoint, Widget} from '@/helpers/WidgetInterface';
 
-//const widgets = reactive(temp);
+//This is the main Widget array
 const widgets = ref<Widget[]>([]);
 const router = useRouter();
 
@@ -144,6 +144,35 @@ function findMetricValInWidgetForDate(widgetID : number, dateToFind : Date){
   };
 
   return foundVal;
+
+}
+
+/**
+ * Update the metric for a date - also recalcs the opacity
+ * @param widgetID
+ * @param dateToFind
+ * @param newValue
+ */
+function updateMetricValInWidgetForDate(widgetID: number, dateToUpdate: Date, newValue: number)  {
+
+  //Get the datapoints for this widget
+  let dps = widgets.value[widgetID];
+
+  //get the date in YYYY-MM-DD format
+  let dateStr = formatDate(dateToUpdate);
+
+  //returns yyyy/mm/dd - now replace / with -
+
+  //now loop through them
+  for (const dp of dps.widgetDataPoints) {
+    if (dp.record_date == dateStr) {
+      dp.value = newValue;
+      //foundVal = dp.value;
+      break;
+    }
+  };
+
+  return;
 
 }
 
@@ -228,9 +257,21 @@ function savePressed(e: any) {
     value : metricValue.value,
     opacity : .6
   }
-  //Lets call the api with the change
-  WidgetryTools.saveDatapoint(dp);
 
+  //Need to get the WidgetID on Widgetry
+
+  let id = widgets.value[widgetBeingEdited.value].widgetID;
+
+  //Lets call the api with the change - this will save it to Widgetry AND to Notion
+  WidgetryTools.saveDatapoint(dp, id);
+
+  //now update the value we have internally
+  updateMetricValInWidgetForDate(widgetBeingEdited.value, currDate.value, metricValue.value );
+
+  //and finally let's update the opacity
+  let ret = WidgetBuilder.calcOpacity(widgets.value[widgetBeingEdited.value]);
+  console.log(widgets.value[widgetBeingEdited.value]);
+  widgets.value[widgetBeingEdited.value] = ret;
 }
 
 function onDidDismiss(event: any) {

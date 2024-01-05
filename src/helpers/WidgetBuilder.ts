@@ -73,39 +73,17 @@ export default class WidgetBuilder {
     //We are give the data returned from the API for ONE widget
     importAPIData(data: { [x: string]: any; datapoints?: any[] | undefined; }) {
 
-        //now add the opacity stuff
-        //Find min/max values for opacity for each widget
-        let min = 0;
-        let max = 1;
-        data.datapoints?.forEach(dp => {
-        //for (let dp of data.datapoints) {
-            if (Number(dp.data_value) > max) {
-                max = Number(dp.data_value);
-            }
-        });
 
-
-        //Now loop through again and calc the opacity :)
-        let delta = max - min;
-
-        for (let j = 0; j < data.datapoints!.length; j++) {
-            let dp = data.datapoints![j];
-            let diff = dp.data_value - min;
-            let opacity = diff / delta;
-            opacity = Math.round(opacity * 100) / 100;
-            //now get in the range 0.2 to 1
-            opacity = opacity * .8;
-            opacity = opacity + .2;
-            opacity = Math.round(opacity * 100) / 100;
-            data.datapoints![j].opacity = opacity;
-        }
-
-
+        //Store it first then calc opacity
         //loop through the datapoints and load them up into this object
         data.datapoints?.forEach(element => {
-            this.addData(element.record_date, element.data_value, element.opacity, false);
+            this.addData(element.record_date, element.data_value, .2, false);
 
         });
+
+        //now add the opacity stuff
+        let ret = WidgetBuilder.calcOpacity(this.widgetData);
+        this.widgetData = ret;
 
         //remove the datapoints from the input
         delete data['datapoints'];
@@ -119,6 +97,43 @@ export default class WidgetBuilder {
 
 
         return true;
+    }
+
+    /**
+     * Calculates the opacity for all the datapoints
+     * Takes a single widget as input
+     * @param widgets - a single widget
+     */
+    static calcOpacity(widget : Widget){
+        //Find min/max values for opacity for each widget
+        let min = 0;
+        let max = 1;
+        widget.widgetDataPoints.forEach(dp => {
+            //for (let dp of data.datapoints) {
+            if (Number(dp.value) > max) {
+                max = Number(dp.value);
+            }
+        });
+
+
+        //Now loop through again and calc the opacity :)
+        let delta = max - min;
+
+        for (let j = 0; j < widget.widgetDataPoints.length; j++) {
+            let dp = widget.widgetDataPoints[j];
+            let diff = dp.value - min;
+            let opacity = diff / delta;
+            opacity = Math.round(opacity * 100) / 100;
+            //now get in the range 0.2 to 1
+            opacity = opacity * .8;
+            opacity = opacity + .2;
+            opacity = Math.round(opacity * 100) / 100;
+            widget.widgetDataPoints[j].opacity = opacity;
+        }
+
+        return widget;
+
+
     }
 
     //Saves this in the App Storage

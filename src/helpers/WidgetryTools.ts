@@ -89,7 +89,11 @@ export class WidgetryTools {
         return "";
     }
 
-    static async saveDatapoint(dp : DataPoint){
+    /**
+     * Saves a datapaoint for  a widget to Widgetry & Notion
+     * @param dp
+     */
+    static async saveDatapoint(dp : DataPoint, widgetID: Number){
         console.log('Save DP');
         console.log(dp);
         const token = await this.getTokenFromStorage();
@@ -104,7 +108,14 @@ export class WidgetryTools {
                 'Authorization': 'Bearer ' + token
             }
         }
-        axios.post('http://localhost/api/saveDatapoint', dp, options)
+
+        //Convert datapoint to plan  object
+        let data = JSON.parse(JSON.stringify(dp));
+
+        //Add in the widget id
+        data.widgetID = widgetID
+
+        axios.post('http://localhost/api/saveDatapoint', data, options)
             .then(async response => {
                 console.log('Save resp');
 
