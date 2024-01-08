@@ -145,7 +145,9 @@ export default class WidgetBuilder {
     static async clearStorage() {
         console.log('starting to clear');
         storage.forEach(async (value, key, index) => {
+            console.log(key);
             if (key.startsWith(this.widgetPrefix)) {
+                console.log('remove' + key);
                 await storage.remove(key);
             }
         });

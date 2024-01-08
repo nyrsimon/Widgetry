@@ -72,8 +72,8 @@ const appPages = [
     mdIcon: mailSharp,
   },
   {
-    title: 'Outbox',
-    url: '/folder/Outbox',
+    title: 'Sync',
+    url: '/sync',
     iosIcon: paperPlaneOutline,
     mdIcon: paperPlaneSharp,
   },

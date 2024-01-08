@@ -4,12 +4,11 @@ import { Preferences } from '@capacitor/preferences';
 import { state } from '@/state';
 import { WidgetryTools } from '../helpers/WidgetryTools';
 import WidgetBuilder from '../helpers/WidgetBuilder';
-
 const routes: Array<RouteRecordRaw> = [
   {
     path: '',
     name: "Home",
-    component: () => import('@/views/HomePage.vue')
+    component: () => import('@/views/Homepage.vue')
   },
   {
     path: '/Inbox',
@@ -19,6 +18,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/LoginPage.vue')
+  },
+  {
+    path: '/sync',
+    name: 'Sync',
+    component: () => import('@/views/SyncPage.vue')
   },
   {
     path: '/folder/:id',
@@ -45,6 +49,7 @@ router.beforeEach(async (to) => {
 
     const token = await WidgetryTools.getTokenFromStorage();
 
+    console.log('is iser logged in');
     console.log(isUserLoggedIn);
 
     //if we are not logged in redirect to the login page

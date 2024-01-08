@@ -42,7 +42,7 @@
           <input type="password" v-model="form.password" placeholder="Password"
             class="text-2xl bg-gray-200 focus:outline-none">
         </div>
-        <div v-if="isError">
+        <div v-if="isError" class="mt-5  text-2xl p-2 bg-red-300 text-center ">
           <p>{{  errorMessage }}</p>
         </div>
         <div class="mt-5 flex flex-row justify-center h-14">
@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, IonIcon, IonInput, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle } from '@ionic/vue';
+import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, IonToolbar, loadingController, } from '@ionic/vue';
 //import { mailOutline } from 'ionicons/icons';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -92,7 +92,17 @@ function loginClicked() {
 
 const logon = async (id: any, pwd: any) => {
 
-  //await Browser.open({ url: 'http://widgetry.io/' });
+  //Turn off the error
+  isError.value = false;
+
+  //Show the loader
+  const loading = await loadingController.create({
+    message: 'Logging In...',
+  });
+
+  loading.present();
+
+  const url = import.meta.env.VITE_WIDGETRY_URL;
 
   const options = {
     headers: {
@@ -106,7 +116,7 @@ const logon = async (id: any, pwd: any) => {
     "email" : id,
     "password" : pwd
   }
-  axios.post('http://localhost/api/createToken', data, options)
+  axios.post(url + '/api/createToken', data, options)
     .then(async response => {
       console.log(response);
       if(response.status == 200){
@@ -126,7 +136,12 @@ const logon = async (id: any, pwd: any) => {
     .catch(function (error){
       console.log('axios error');
       console.log(error.response.data.message);
+      isError.value = true;
+      errorMessage.value = "There was a problem logging in, please try again";
 
+    })
+    .finally(() => {
+      loading.dismiss();
     })
 }
 
@@ -139,7 +154,7 @@ async function storeTokenInPreferences(token: string){
 async function signupClicked(e: { stopPropagation: () => void; }) {
   console.log('sign');
   e.stopPropagation();
-  await Browser.open({ url: 'http://app.widgetry.io/register' });
+  await Browser.open({ url: url + '/register' });
 
 }
 </script>

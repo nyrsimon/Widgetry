@@ -301,7 +301,6 @@ watch(() => state.isLoading,
         console.log(data);
         widgets.value = data;
         console.log('added');
-        console.log(data);
 
       });
   }
@@ -322,6 +321,7 @@ onBeforeUpdate(async () => {
     console.log('no cos still loading');
     return;
   }
+  console.log('we are loading');
   WidgetBuilder.loadAllWidgetsFromStorage()
     .then((data : any)    => {
       console.log('back')
